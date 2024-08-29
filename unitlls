@@ -1,0 +1,9 @@
+vagrant ssh node1 -c "hostname -I"
+vagrant ssh node2 -c "hostname -I"
+vagrant ssh node3 -c "hostname -I"
+
+curl -sfL https://get.k3s.io | INSTALL_K3S_EXEC="--write-kubeconfig ~/.kube/config --write-kubeconfig-mode 666 --tls-san 192.168.0.101 --node-external-ip=192.168.0.101" sh -
+
+echo -e "export K3S_TOKEN=$(cat /var/lib/rancher/k3s/server/node-token)\nexport K3S_URL=https://$K3S_EXTERNAL_IP:6443\nexport INSTALL_K3S_EXEC=\"--docker --token \$K3S_TOKEN --server \$K3S_URL\""
+
+curl -sfL https://get.k3s.io | K3S_URL=https://192.168.0.101:6443 K3S_TOKEN=K1085ba8f83a719acfedbc5487ca649d5180cc8a908e57b1f9fdd6d4a0f0c26874d::server:1461d0d2aba8b99dde1207f56d73dd51 sh -
