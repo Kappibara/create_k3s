@@ -1,0 +1,47 @@
+---
+- hosts: all
+  become: yes
+  tasks:
+    - name: Install dependencies
+      apt:
+        name:
+          - curl
+          - apt-transport-https
+          - ca-certificates
+        state: present
+        update_cache: yes
+
+
+- hosts: master
+  become: yes
+  tasks:
+
+    - name: Ensure UFW is disabled
+      ufw: state=disabled
+
+    - name: allow port 6443
+      ufw: rule=allow port=6443 proto=tcp
+
+
+    - name: Allow traffic from the pods network
+      ufw: rule=allow from_ip=10.42.0.0/16 to_ip=any
+
+    - name: Allow traffic from the services network
+      ufw: rule=allow from_ip=10.43.0.0/16 to_ip=any
+
+    - name: Install K3s Master
+      shell: curl -sfL https://get.k3s.io | K3S_KUBECONFIG_MODE="644" sh -
+
+    - name: Ensure KUBECONFIG is set in /etc/environment
+      ansible.builtin.lineinfile:
+        path: /etc/environment
+        line: 'KUBECONFIG=/etc/rancher/k3s/k3s.yaml'
+        create: yes
+        state: present
+
+#- hosts: worker
+#  become: yes
+#  tasks:
+#    - name: Install K3s Worker
+#      shell: |
+#        curl -sfL https://get.k3s.io | K3S_URL=https://{{ hostvars['master-node'].ansible_host }}:6443 K3S_TOKEN={{ lookup('env', 'K3S_TOKEN') }} sh -
